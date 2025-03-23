@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import * as dotenv from "dotenv";
 import { Scraper } from "./application/scraper/scraper";
 import { scheduleScraper } from "./application/scheduler/scheduler";
 import { Bot } from "./application/bot";

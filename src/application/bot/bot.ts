@@ -1,8 +1,8 @@
-import TelegramBot from 'node-telegram-bot-api';
-import 'dotenv/config';
-import * as dotenv from 'dotenv'
-import { UserService } from '../user/services/user-services';
-import { UserRepository } from '../../infra/database/repositories/user-repository';
+import TelegramBot from "node-telegram-bot-api";
+import "dotenv/config";
+import * as dotenv from "dotenv";
+import { UserService } from "../user/services/user-services";
+import { UserPostgresRepository } from "../../infra/postgresql/user-postgres-repository";
 
 dotenv.config();
 
@@ -19,6 +19,16 @@ export declare namespace IBot {
     chatId: number;
     time?: string;
   }
+
+  interface IHandleCaptureNameParams {
+    chatId: number;
+    name: string;
+  }
+
+  interface IHandleCapturePhoneParams {
+    chatId: number;
+    phone: string;
+  }
 }
 
 export class Bot {
@@ -30,9 +40,11 @@ export class Bot {
 
     this.bot = new TelegramBot(token, { polling: true });
 
-    const userRepository = new UserRepository();
+    const userRepository = new UserPostgresRepository();
 
-    this.userService = new UserService(userRepository);
+    this.userService = new UserService({
+      userRepository
+    });
 
     this.initializeCommands();
   }
@@ -40,15 +52,24 @@ export class Bot {
   private initializeCommands(): void {
     this.bot.onText(/\/start/, (msg) => {
       console.log(msg);
-
-      this.handleStart({
-        chatId: msg.chat.id,
-      });
+      this.handleStart({ chatId: msg.chat.id });
     });
 
     this.bot.onText(/\/subscribe (\d{2}:\d{2})/, (msg, match) =>
-      this.handleSubscribe(msg.chat.id, match?.[1] as string),
+      this.handleSubscribe(msg.chat.id),
     );
+
+    this.bot.onText(/\/unsubscribe/, (msg) =>
+      this.handleUnsubscribe(msg.chat.id),
+    );
+
+    this.bot.onText(/\/setname/, (msg) => {
+      this.handleSetName(msg.chat.id);
+    });
+
+    this.bot.onText(/\/setphone/, (msg) => {
+      this.handleSetPhone(msg.chat.id);
+    });
   }
 
   private handleStart(params: IBot.IHandleStartParams): void {
@@ -56,7 +77,7 @@ export class Bot {
 
     this.bot.sendMessage(
       chatId,
-      "Welcome! I'll send you updates at scheduled times. Use /subscribe HH:MM to set a time.",
+      "Welcome! I'll send you updates at scheduled times. Use /subscribe HH:MM to set a time. You can also set your name and phone using /setname and /setphone.",
     );
   }
 
@@ -64,24 +85,73 @@ export class Bot {
     this.bot.sendMessage(chatId, message);
   }
 
-  private async handleSubscribe(chatId: number, time: string) {
-    const message = await this.userService.subscribeUser(chatId, time);
+  private async handleSubscribe(chatId: number) {
+    const message = await this.userService.subscribe({
+      chatId
+    });
 
     this.bot.sendMessage(chatId, message);
-
-    this.bot.sendMessage(
-      chatId,
-      `✅ Subscribed! You'll receive updates at ${time}`,
-    );
   }
 
   private async handleUnsubscribe(chatId: number) {
-    const message = await this.userService.unsubscribeUser(chatId);
+    const message = await this.userService.unsubscribe({
+      chatId,
+    });
 
     this.bot.sendMessage(chatId, message);
   }
 
-  public async getUsers() {
-    return await this.userService.getAllUsers();
+  private async handleSetName(chatId: number): Promise<void> {
+    this.bot.sendMessage(chatId, "Please provide your name:");
+    this.bot.once("message", async (msg) => {
+      const name = msg.text?.trim();
+      if (name) {
+        const user = await this.userService.getByChatId({ chatId })
+
+        await this.userService.update({
+          id: user.id,
+          name,
+        });
+
+        this.bot.sendMessage(chatId, `Your name has been set to ${name}`);
+      } else {
+        this.bot.sendMessage(chatId, "I didn't get that. Please try again.");
+      }
+    });
   }
-};
+
+  private async handleSetPhone(chatId: number): Promise<void> {
+    this.bot.sendMessage(chatId, "Please provide your phone number:");
+    this.bot.once("message", async (msg) => {
+      const phone = msg.text?.trim();
+      if (phone && this.validatePhone(phone)) {
+        const user = await this.userService.getByChatId({ chatId });
+
+        await this.userService.update({
+          id: user.id,
+          phone
+        })
+
+        this.bot.sendMessage(
+          chatId,
+          `Your phone number has been set to ${phone}`,
+        );
+      } else {
+        this.bot.sendMessage(
+          chatId,
+          "I didn't get a valid phone number. Please try again.",
+        );
+      }
+    });
+  }
+
+  private validatePhone(phone: string): boolean {
+    const phoneRegex = /^[0-9]{10,15}$/;
+    return phoneRegex.test(phone);
+  }
+
+  public async getUsers() {
+    return await this.userService.getAllUsers({ limit: 30, page: 0
+    });
+  }
+}

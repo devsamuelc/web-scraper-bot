@@ -3,7 +3,7 @@ import { v4 as uuid } from 'uuid';
 export declare namespace IUser {
   interface IProps {
     id: string;
-    name: string;
+    name: string | null;
     phone: string | null;
     chatId: number;
     queries: string[];
@@ -16,11 +16,11 @@ export declare namespace IUser {
 
   interface IConstructor {
     id?: IUser.IProps['id'];
-    name: IUser.IProps['name'];
+    name?: IUser.IProps['name'];
     phone?: IUser.IProps['phone'];
     chatId: IUser.IProps['chatId'];
-    queries: IUser.IProps['queries'];
-    websites: IUser.IProps['websites'];
+    queries?: IUser.IProps['queries'];
+    websites?: IUser.IProps['websites'];
     schedules?: IUser.IProps['schedules'];
     createdAt?: IUser.IProps['createdAt'];
     updatedAt?: IUser.IProps['updatedAt'];
@@ -30,12 +30,16 @@ export declare namespace IUser {
 
 export class User {
   protected props: IUser.IProps;
+  public static defaultSchedule = ['12:00', '16:00'];
 
   public constructor(props: IUser.IConstructor) {
     this.props = {
       ...props,
       id: props.id || uuid(),
+      name: props.name || null,
       phone: props.phone || null,
+      queries: props.queries || [],
+      websites: props.websites || [],
       schedules: props.schedules || [],
       createdAt: props.createdAt || new Date(),
       updatedAt: props.updatedAt || new Date(),
@@ -77,6 +81,10 @@ export class User {
 
   public get websites(): IUser.IProps['websites'] {
     return this.props.websites;
+  };
+
+  public get schedules(): IUser.IProps['schedules'] {
+    return this.props.schedules;
   };
 
   public get createdAt(): IUser.IProps['createdAt'] {

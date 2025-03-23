@@ -1,13 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "CommonJS",
-    "moduleResolution": "node",
+    "module": "Node16",
+    "outDir": "./dist",
+    "allowJs": false,
     "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist"
   },
-  "include": ["src/**/*.ts", "src", "src/types", "eslint.config.ts"]
+  "exclude": ["node_modules", "dist"]
 }

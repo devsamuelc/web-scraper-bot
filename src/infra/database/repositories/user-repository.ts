@@ -1,35 +1,59 @@
 import { User } from "../../../application/user/entities/user";
-import { prisma } from "../database";
 
+export declare namespace IUserRepository {
+  interface ICreateParams {
+    name?: string;
+    phone?: string;
+    chatId: number;
+    queries?: string[];
+    websites?: string[];
+    schedules?: string[];
+  }
 
-export interface IUserRepository {
-  createOrUpdateUser(
-    chatId: number,
-    schedule: string,
-  ): Promise<User>;
+  interface IUpdateParams {
+    id: string;
+    name?: string;
+    phone?: string;
+    chatId?: string;
+    queries?: string[];
+    websites?: string[];
+    schedules?: string[];
+  }
+  interface IGetByChatIdParams {
+    chatId: number;
+  }
 
-  getUsers(): Promise<User[]>;
+  interface IGetAllParams {
+    limit: number;
+    page: number;
+  }
 
-  deleteUser(chatId: number): Promise<void>;
+  interface IGetByIdParams {
+    id: string;
+  }
+
+  interface IGetAllWithCountParams {
+    limit: number;
+    page: number;
+  }
+
+  interface ISoftDeleteParams {
+    id: string;
+  }
+
+  interface IDeleteParams {
+    id: string;
+    permission: string;
+  }
 }
 
-export class UserRepository implements IUserRepository {
-  async createOrUpdateUser(
-    chatId: number,
-    schedule: string,
-  ): Promise<User> {
-    return await prisma.user.upsert({
-      where: { chatId },
-      update: { schedule },
-      create: { chatId, schedule },
-    });
-  }
-
-  async getUsers(): Promise<User[]> {
-    return await prisma.user.findMany();
-  }
-
-  async deleteUser(chatId: number): Promise<void> {
-    await prisma.user.delete({ where: { chatId } });
-  }
+export abstract class UserRepository {
+  public abstract create(params: IUserRepository.ICreateParams): Promise<User>
+  public abstract update(params: IUserRepository.IUpdateParams): Promise<User>
+  public abstract getById(params: IUserRepository.IGetByIdParams): Promise<User | null>;
+  public abstract getByChatId(params: IUserRepository.IGetByChatIdParams): Promise<User | null>;
+  public abstract getAll(params: IUserRepository.IGetAllParams): Promise<User[]>;
+  public abstract getAllWithCount(params: IUserRepository.IGetAllWithCountParams): Promise<{ users: User[], total: number }>;
+  public abstract softDelete(params: IUserRepository.ISoftDeleteParams): Promise<void>;
+  public abstract delete(params: IUserRepository.IDeleteParams): Promise<void>;
 }

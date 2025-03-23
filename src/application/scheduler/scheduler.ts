@@ -12,30 +12,30 @@ export declare namespace IScheduleScraper {
 export function scheduleScraper(params: IScheduleScraper.IParams): void {
   const { scraper, bot } = params;
 
-  cron.schedule("* * * * *", async () => {
-    const users = await bot.getUsers();
+  // cron.schedule("* * * * *", async () => {
+  //   const users = await bot.getUsers();
 
-    for (const user of users) {
-      const { chatId } = user;
+  //   for (const user of users) {
+  //     const { chatId } = user;
 
-      // const now = new Date().toTimeString().slice(0, 5);
+  //     // const now = new Date().toTimeString().slice(0, 5);
 
-      try {
-        const data = await scraper.scrapeSite({
-          url: "http://books.toscrape.com",
-        });
+  //     try {
+  //       const data = await scraper.scrapeSite({
+  //         url: "http://books.toscrape.com",
+  //       });
 
-        bot.sendMessage(chatId, `📢 Latest Update: ${data}`);
-      } catch (error) {
-        console.error("Error scraping site:", error);
+  //       bot.sendMessage(chatId, `📢 Latest Update: ${data}`);
+  //     } catch (error) {
+  //       console.error("Error scraping site:", error);
 
-        bot.sendMessage(
-          chatId,
-          "⚠️ Error while fetching data. Please try again later.",
-        );
-      }
-    }
-  });
+  //       bot.sendMessage(
+  //         chatId,
+  //         "⚠️ Error while fetching data. Please try again later.",
+  //       );
+  //     }
+  //   }
+  // });
 }
 
 console.log("Scheduler is set up.");
